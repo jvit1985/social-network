@@ -1,9 +1,13 @@
-const { User } = require('../models');
+const { User, Thoughts } = require('../models');
 
 const userController = {
     //get all users
     getAllUser(req, res) {
         User.find({})
+            .populate({
+                path: 'friends',
+                select: '-__v',
+            })
             .select('-__v')
             .sort({ _id: -1 })
             .then(dbUserData => res.json(dbUserData))
@@ -17,7 +21,11 @@ const userController = {
         User.findOne({ _id: params.id })
             .populate({
                 path: 'thoughts',
-                select: '-__v'
+                select: '-__v',
+            })
+            .populate({
+                path: 'friends',
+                select: '-__v',
             })
             .select('-__v')
             .then(dbUserData => {
@@ -60,7 +68,11 @@ const userController = {
                     res.status(404).json({ message: 'No user found with this id!' });
                     return;
                 }
-                res.json(dbUserData);
+                //Remove user's thoughts when user is deleted
+                return Thoughts.deleteMany({ _id: { $in: dbUserData.thoughts } });
+            })
+            .then(() => {
+                res.json({ message: 'User and associated thoughts deleted!' });
             })
             .catch(err => res.status(400).json(err));
     },
@@ -70,8 +82,8 @@ const userController = {
     addFriend({ params }, res) {
         User.findOneAndUpdate(
             { _id: params.userId },
-            { $push: { friends: body } },
-            { new: true }
+            { $push: { friends: params.friendsId } },
+            { new: true, runValidators: true }
         )
             .then(dbUserData => {
                 if(!dbUserData) {
@@ -86,7 +98,7 @@ const userController = {
     removeFriend({ params }, res) {
         User.findOneAndUpdate(
             { _id: params.userId },
-            { $pull: { friends: { friendsId: params.friendsId } } },
+            { $pull: { friends: params.friendsId } },
             { new: true }
         )
         .then(dbUserData => res.json(dbUserData))

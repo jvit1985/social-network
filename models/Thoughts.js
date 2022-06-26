@@ -5,14 +5,14 @@ const ReactionSchema = new Schema(
     {
         reactionId: {
             type: Schema.Types.ObjectId,
-            default: () => new Types.ObjectId()
+            default: () => new Types.ObjectId(),
         },
         reactionBody: {
             type: String,
             required: true,
             maxlength: 280
         },
-        username: {
+        userName: {
             type: String,
             required: true
         },
@@ -25,7 +25,8 @@ const ReactionSchema = new Schema(
     {
         toJSON: {
             getters: true
-        }
+        },
+        id: false,
     }
 );
 
@@ -41,18 +42,18 @@ const ThoughtSchema = new Schema({
         default: Date.now,
         get: createdAtVal => dateFormat(createdAtVal)
     },
-    username: {
-        type: Schema.Types.String,
-        ref: 'User'
+    userName: {
+        type: String,
+        required: true,
     },
-    reactions: [ReactionSchema]
+    reactions: [ReactionSchema],
 },
 {
     toJSON: {
         virtuals: true,
         getters: true
     },
-    id: false
+    id: false,
 });
 
 ThoughtSchema.virtual('reactionCount').get(function() {
